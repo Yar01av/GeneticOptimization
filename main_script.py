@@ -1,6 +1,6 @@
 from tensorflow import keras
 
-"""The main class for the optimizer"""
+"""The main class for the genetic optimizer"""
 class GeneticOptimizer:
     def __init__(self, base_model, test_data, n_parents=2, traits=dict(), n_iterations=100):
         # TODO add assertion about the traits in relation to the attributes of the model
