@@ -2,9 +2,13 @@ from tensorflow import keras
 
 """The main class for the genetic optimizer"""
 class GeneticOptimizer:
-    def __init__(self, base_model, test_data, n_parents=2, traits=dict(), n_iterations=100):
+    def __init__(self, base_model, training_data, test_data, n_parents=2, traits=dict(), n_iterations=100):
         # TODO add assertion about the traits in relation to the attributes of the model
-        self.test_data = test_data
+        # TODO assert normalization of the training data
+        self.x_train = training_data[0]
+        self.y_train = training_data[1]
+        self.x_test = test_data[0]
+        self.y_test = test_data[1]
         self.n_parents = n_parents
         self.base_model = base_model
         self.traits = traits  # Hyper parameters to optimize
@@ -36,12 +40,12 @@ class GeneticOptimizer:
         trained_models = models[:]
 
         for model in models:
-            trained_model, accuracy = self.do_training(model)
+            trained_model, accuracy = self.do_training(model, self.x_train, self.y_train, self.x_test, self.y_test)
             trained_models.append((trained_model, accuracy))
 
         return trained_models
 
-    """Returns a list of models with the same architecture as 'base_model' but optimal hyper-parameters"""
+    """Modifies a list of models. Architecture remains the same as 'base_model' but hyper-parameters are optimal"""
     def optimize(self):
         # TODO third
         # Let the evolution run for n_iterations
@@ -65,9 +69,24 @@ class GeneticOptimizer:
         # TODO first
         return child
 
-    """Returns the trained version of the compiled 'model'"""
-    def do_training(self, model):
-        # TODO first
-        accuracy = 0
+    """Returns tuple of the compiled 'model' trained on 'training_data' which is assumed normalized 
+    and accuracy on the test data"""
+    def do_training(self, model, x_train, y_train, x_test, y_test):
+        # TODO second
+        one_hot_y_train_labels = self.one_hot(y_train)
 
-        return model, accuracy
+        # Keras assumed
+        trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=EPOCHS)
+        accuracy = self.get_accuracy(trained_model, x_test, y_test)
+
+        return trained_model, accuracy
+
+    """Returns accuracy for the given model on the test data"""
+    def get_accuracy(self, trained_model, x_test, y_test):
+        # TODO first
+        pass
+
+    """Returns one hot encoding of the categorical data in 2d numpy array"""
+    def one_hot(self, categorical_data):
+        # TODO first
+        pass
