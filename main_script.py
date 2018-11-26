@@ -1,15 +1,28 @@
 from tensorflow import keras
 
-"""The main class for the genetic optimizer"""
+
 class GeneticOptimizer:
-    def __init__(self, base_model, training_data, test_data, n_parents=2, traits=dict(), n_iterations=100):
+    """The main class for the genetic optimizer"""
+    class KerasPackageWrapper:
+        """Returns one hot encoding of the categorical matrix data in 2d numpy array"""
+
+        @staticmethod
+        def make_one_hot(categorical_data, n_categories):
+            incoding = keras.utils.to_categorical(categorical_data, num_classes=n_categories)
+
+            return incoding
+
+
+    def __init__(self, base_model, training_data, test_data, n_categories, epochs=3, n_parents=2, traits=dict(), n_iterations=100):
         # TODO add assertion about the traits in relation to the attributes of the model
         # TODO assert normalization of the training data
+        self.n_categories = n_categories
         self.x_train = training_data[0]
         self.y_train = training_data[1]
         self.x_test = test_data[0]
         self.y_test = test_data[1]
         self.n_parents = n_parents
+        self.epochs = epochs
         self.base_model = base_model
         self.traits = traits  # Hyper parameters to optimize
         self.n_iterations = n_iterations
@@ -73,20 +86,15 @@ class GeneticOptimizer:
     and accuracy on the test data"""
     def do_training(self, model, x_train, y_train, x_test, y_test):
         # TODO second
-        one_hot_y_train_labels = self.one_hot(y_train)
+        one_hot_y_train_labels = self.KerasPackageWrapper.make_one_hot(y_train, self.n_categories)
 
         # Keras assumed
-        trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=EPOCHS)
+        trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=self.epochs)
         accuracy = self.get_accuracy(trained_model, x_test, y_test)
 
         return trained_model, accuracy
 
     """Returns accuracy for the given model on the test data"""
     def get_accuracy(self, trained_model, x_test, y_test):
-        # TODO first
-        pass
-
-    """Returns one hot encoding of the categorical data in 2d numpy array"""
-    def one_hot(self, categorical_data):
         # TODO first
         pass
