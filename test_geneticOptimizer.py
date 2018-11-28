@@ -1,10 +1,29 @@
 from unittest import TestCase
 from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
+from tensorflow import keras
+
 
 class TestGeneticOptimizer(TestCase):
-    # TODO make test data and test model(s)
-    testing_network = KerasPackageWrapper.make_test_model([1])
+    """Fetches and purifies mnist"""
+
+    @staticmethod
+    def _get_clean_mnist(self):
+        # TODO keras implied!
+        data = keras.datasets.mnist
+
+        (x_train, y_train), (x_test, y_test) = data.load_data()
+        x_train = x_train.reshape(60000, 784)
+        x_test = x_test.reshape(10000, 784)
+        x_train = x_train.astype('float32')
+        x_test = x_test.astype('float32')
+        x_test /= 255
+        x_train /= 255
+
+        return x_train, y_train, x_test, y_test
+
+    # Clean mnist data. Ready to use by the networks
+    train_data_x, train_data_y, test_data_x, test_data_y = _get_clean_mnist()
 
     # Templates
     def _check_one_hot(self, input_data, n_categories, exp_result):
@@ -28,11 +47,18 @@ class TestGeneticOptimizer(TestCase):
     def test_get_accuracy(self):
         model = KerasPackageWrapper.make_flat_sequential_model()
 
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dense(10, activation="relu"))
         model.add(keras.layers.Dropout(0.2))
 
         model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model.add(keras.layers.Dropout(0.2))
+
+        # Compile the network
+        model.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        model.evaluate(self.test_data_y, self.test_data_y)
 
         # TODO implement the rest of the test
         print()

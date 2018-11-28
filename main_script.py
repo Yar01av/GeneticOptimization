@@ -85,11 +85,11 @@ class GeneticOptimizer:
 
         return trained_model, accuracy
 
-    """Returns accuracy for the given model on the test data (given as one-hot encoding)"""
-    def get_accuracy(self, trained_model, x_test, y_test):
-        # TODO second
+    """Returns accuracy for the given compiled model on the test data (given as one-hot encoding)"""
+    def get_accuracy(self, comp_model, x_test, y_test):
+        # TODO first
 
-        trained_model.evaluate(x_test, )
+        # comp_model.evaluate(x_test, )
         pass
 
 
