@@ -1,13 +1,14 @@
 from unittest import TestCase
-from main_script import GeneticOptimizer
+from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
 
 class TestGeneticOptimizer(TestCase):
-    # def __equal_lists:
+    # TODO make test data and test model(s)
+    testing_network = KerasPackageWrapper.make_test_model([1])
 
     # Templates
     def _check_one_hot(self, input_data, n_categories, exp_result):
-        incoding = GeneticOptimizer.KerasPackageWrapper.make_one_hot(input_data, n_categories)
+        incoding = KerasPackageWrapper.make_one_hot(input_data, n_categories)
 
         comparison = np.equal(incoding, exp_result)
 
@@ -22,3 +23,16 @@ class TestGeneticOptimizer(TestCase):
 
     def test_one_hot3(self):
         self._check_one_hot(np.array([[1], [0]]), 2, np.array([[0, 1], [1, 0]]))
+
+    """Test get_accuracy"""
+    def test_get_accuracy(self):
+        model = KerasPackageWrapper.make_flat_sequential_model()
+
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.2))
+
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.2))
+
+        # TODO implement the rest of the test
+        print()

@@ -3,16 +3,6 @@ from tensorflow import keras
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
-    class KerasPackageWrapper:
-        """Returns one hot encoding of the categorical matrix data in 2d numpy array"""
-
-        @staticmethod
-        def make_one_hot(categorical_data, n_categories):
-            incoding = keras.utils.to_categorical(categorical_data, num_classes=n_categories)
-
-            return incoding
-
-
     def __init__(self, base_model, training_data, test_data, n_categories, epochs=3, n_parents=2, traits=dict(), n_iterations=100):
         # TODO add assertion about the traits in relation to the attributes of the model
         # TODO assert normalization of the training data
@@ -70,12 +60,12 @@ class GeneticOptimizer:
     """Returns a list of compiled models with randomized hyper-parameters and the same architecture as the 'model'"""
     def generate_population(self, model):
         # TODO first
-        return keras.Sequential()
+        return KerasPackageWrapper.make_flat_sequential_model()
 
     """Returns a child with a random set of traits from its parents"""
     def inherit_to_child(self, parents, traits):
         # TODO first
-        return keras.Sequential()
+        return KerasPackageWrapper.make_flat_sequential_model()
 
     """Returns the same model but with slightly altered hyper-parameters"""
     def mutate(self, child):
@@ -86,15 +76,37 @@ class GeneticOptimizer:
     and accuracy on the test data"""
     def do_training(self, model, x_train, y_train, x_test, y_test):
         # TODO second
-        one_hot_y_train_labels = self.KerasPackageWrapper.make_one_hot(y_train, self.n_categories)
+        one_hot_y_train_labels = KerasPackageWrapper.make_one_hot(y_train, self.n_categories)
+        one_hot_y_test_labels = KerasPackageWrapper.make_one_hot(y_test, self.n_categories)
 
-        # Keras assumed
+        # Keras model assumed
         trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=self.epochs)
-        accuracy = self.get_accuracy(trained_model, x_test, y_test)
+        accuracy = self.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
 
         return trained_model, accuracy
 
-    """Returns accuracy for the given model on the test data"""
+    """Returns accuracy for the given model on the test data (given as one-hot encoding)"""
     def get_accuracy(self, trained_model, x_test, y_test):
-        # TODO first
+        # TODO second
+
+        trained_model.evaluate(x_test, )
         pass
+
+
+class KerasPackageWrapper:
+    """Wraps around the ML package used - tf.Keras"""
+    # TODO make such classes for tflearn and theano. Inherit them from a common abstract class.
+
+    """Returns one hot encoding of the categorical matrix data in 2d numpy array"""
+    @staticmethod
+    def make_one_hot(categorical_data, n_categories):
+        incoding = keras.utils.to_categorical(categorical_data, num_classes=n_categories)
+
+        return incoding
+
+    """Returns a sequential model with random architecture"""
+    @staticmethod
+    def make_flat_sequential_model():
+        return keras.Sequential()
+
+    """Testing related"""
