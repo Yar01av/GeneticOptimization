@@ -1,11 +1,14 @@
+# First objective: otimize the drop-outs only
 from tensorflow import keras
 
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
-    def __init__(self, base_model, training_data, test_data, n_categories, epochs=3, n_parents=2, traits=dict(), n_iterations=100):
+    def __init__(self, base_model, training_data, test_data, n_categories , max_deviation_factor=0.2, epochs=3, n_parents=2, traits=set(), n_iterations=100):
         # TODO add assertion about the traits in relation to the attributes of the model
         # TODO assert normalization of the training data
+        # TODO check that the model is compiled and do it otherwise
+        self.max_deviation_factor = max_deviation_factor
         self.n_categories = n_categories
         self.x_train = training_data[0]
         self.y_train = training_data[1]
@@ -16,11 +19,12 @@ class GeneticOptimizer:
         self.base_model = base_model
         self.traits = traits  # Hyper parameters to optimize
         self.n_iterations = n_iterations
-        self.optimized_models = self.generate_population(base_model)  # A sorted list models (by performance) after the lest evolutionary step
+        self.optimized_models = self.breed([base_model], 1, self.traits)  # A sorted list of models (by performance)
+                                                          # after the lest evolutionary step
 
     """Breeds the parents (already sorted models) and returns a list containing the parents and 
     the mutated children as compiled models."""
-    def breed(self, models, n_parents):
+    def breed(self, models, n_parents, traits):
         # TODO second
         assert n_parents <= len(models)
 
@@ -29,8 +33,8 @@ class GeneticOptimizer:
         children = []
 
         for i in range(n_children):
-            pure_child = self.inherit_to_child(INVARIANT_MODELS, self.traits)
-            mutated_child = self.mutate(pure_child)
+            pure_child = self.inherit_to_child(INVARIANT_MODELS, traits)
+            mutated_child = self.mutate(pure_child, traits)
 
             children.append(mutated_child)
 
@@ -53,7 +57,7 @@ class GeneticOptimizer:
         # TODO third
         # Let the evolution run for n_iterations
         for i in range(self.n_iterations):
-            models = self.breed(self.optimized_models, self.n_parents)
+            models = self.breed(self.optimized_models, self.n_parents, self.traits)
             trained_models = self.train_models(models)  # A list of (trained model, accuracy) tuples
             self.optimized_models = sorted(trained_models, key=lambda t1, t2: t2)
 
@@ -62,14 +66,18 @@ class GeneticOptimizer:
         # TODO first
         return KerasPackageWrapper.make_flat_sequential_model()
 
-    """Returns a child with a random set of traits from its parents"""
+    """Returns a child with a random set of traits (ones passed to the constractor) 
+    from its parents (list of networks)"""
     def inherit_to_child(self, parents, traits):
-        # TODO first
+        # TODO second
         return KerasPackageWrapper.make_flat_sequential_model()
 
-    """Returns the same model but with slightly altered hyper-parameters"""
-    def mutate(self, child):
+    """Returns the same model (pre-compiled) but with slightly altered hyper-parameters (and compiled)"""
+    @staticmethod
+    def mutate(child, traits_to_alter, max_deviation):
         # TODO first
+
+
         return child
 
     """Returns tuple of the compiled 'model' trained on 'training_data' which is assumed normalized 
@@ -81,16 +89,9 @@ class GeneticOptimizer:
 
         # Keras model assumed
         trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=self.epochs)
-        accuracy = self.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
+        accuracy = KerasPackageWrapper.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
 
         return trained_model, accuracy
-
-    """Returns accuracy for the given compiled model on the test data (given as one-hot encoding)"""
-    def get_accuracy(self, comp_model, x_test, y_test):
-        # TODO first
-
-        # comp_model.evaluate(x_test, )
-        pass
 
 
 class KerasPackageWrapper:
@@ -108,5 +109,17 @@ class KerasPackageWrapper:
     @staticmethod
     def make_flat_sequential_model():
         return keras.Sequential()
+
+    """Returns accuracy for the given compiled model on the test data (given as one-hot encoding)"""
+    @staticmethod
+    def get_accuracy(comp_model, x_test, y_test):
+        result = comp_model.evaluate(x_test, y_test)
+
+        return result[1]
+
+    """Compiles the given model"""
+    @staticmethod
+    def compile_model(model):
+        return model.compile()
 
     """Testing related"""
