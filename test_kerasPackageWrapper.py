@@ -1,5 +1,5 @@
 from unittest import TestCase
-from tensorflow import keras
+import keras
 from main_script import KerasPackageWrapper
 from testing_data import get_clean_mnist
 

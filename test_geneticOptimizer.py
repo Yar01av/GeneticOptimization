@@ -1,7 +1,7 @@
 from unittest import TestCase
 from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
-from tensorflow import keras
+import keras
 from testing_data import get_clean_mnist
 
 
@@ -76,3 +76,27 @@ class TestGeneticOptimizer(TestCase):
 
         self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate, delta=delta)
         self.assertAlmostEqual(model.layers[3].rate, mutated_model.layers[3].rate, delta=delta)
+
+    def test_mutate4(self):
+        delta = 0.2
+
+        # TODO keras assumed!
+        model = KerasPackageWrapper.make_flat_sequential_model()
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.3))
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.2))
+        model.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1, 5}), delta)
+
+        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate, delta=delta)
+        self.assertAlmostEqual(model.layers[5].rate, mutated_model.layers[5].rate, delta=delta)
+        self.assertEqual(model.layers[5].rate, mutated_model.layers[5].rate)
+
+
+    # TODO test_mutate5 that would not be passed by an identity function

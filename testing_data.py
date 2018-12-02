@@ -1,5 +1,6 @@
 from main_script import KerasPackageWrapper
-from tensorflow import keras
+import keras
+
 
 """Fetches and purifies mnist"""
 def get_clean_mnist():

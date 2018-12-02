@@ -1,6 +1,8 @@
 # First objective: otimize the drop-outs only
-from tensorflow import keras
+import keras
 from random import random
+from copy import deepcopy
+
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
@@ -73,20 +75,28 @@ class GeneticOptimizer:
         # TODO second
         return KerasPackageWrapper.make_flat_sequential_model()
 
-    """Returns the same model (pre-compiled) but with slightly altered hyper-parameters (and compiled)"""
+    """Returns the same model (pre-compiled) but with slightly altered hyper-parameters (and compiled). The altered 
+    values should equal the old ones +/- max_deviation"""
     @staticmethod
     def mutate(child, traits_to_alter, max_deviation):
-        # TODO first
-        mutated_child = child
+        # TODO second
+        mutated_child = KerasPackageWrapper.deep_copy(child)
 
         # Mutate dropouts
         if "layer_dropout" in traits_to_alter.keys():
             for layer in traits_to_alter["layer_dropout"]:
-                # TODO continue
-                mutated_child.layers[layer].rate = child.layers[layer].rate * max_deviation * random()
+                # TODO keras assumed
+                mutated_child.save("saved_weights.h5")
 
+                # Compute new rate
+                mutated_child.layers[layer].rate = GeneticOptimizer.get_mutated_dropout(child.layers[layer].rate,
+                                                                                        max_deviation)
 
-        return child
+                # Propagate the new changes into the backend (cloning is necessary for that)
+                mutated_child = keras.models.clone_model(mutated_child)
+                mutated_child.load_weights("saved_weights.h5")
+
+        return mutated_child
 
     """Returns tuple of the compiled 'model' trained on 'training_data' which is assumed normalized 
     and accuracy on the test data"""
@@ -101,6 +111,13 @@ class GeneticOptimizer:
 
         return trained_model, accuracy
 
+    """Compute new dropout rate for the given rate"""
+    @staticmethod
+    def get_mutated_dropout(old_dropout_rate, deviation):
+        change_by = (random() * 2 * deviation) - deviation
+        new_rate = old_dropout_rate - change_by
+
+        return new_rate
 
 class KerasPackageWrapper:
     """Wraps around the ML package used - tf.Keras"""
@@ -129,5 +146,13 @@ class KerasPackageWrapper:
     @staticmethod
     def compile_model(model):
         return model.compile()
+
+    """Copies the model"""
+    @staticmethod
+    def deep_copy(model):
+        model.save("tempModelSave.h5")
+        copied_model = keras.models.load_model("tempModelSave.h5", compile=True)
+
+        return copied_model
 
     """Testing related"""
