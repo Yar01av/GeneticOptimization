@@ -1,14 +1,15 @@
 # First objective: otimize the drop-outs only
 from tensorflow import keras
-
+from random import random
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
-    def __init__(self, base_model, training_data, test_data, n_categories , max_deviation_factor=0.2, epochs=3, n_parents=2, traits=set(), n_iterations=100):
-        # TODO add assertion about the traits in relation to the attributes of the model
-        # TODO assert normalization of the training data
+    def __init__(self, base_model, training_data, test_data, n_categories , max_deviation=0.2, epochs=3, n_parents=2, traits=None, n_iterations=100):
+        # TODO add exception about the traits in relation to the attributes of the model (do the layers
+        # given have rates etc.)
+        # TODO add exception normalization of the training data
         # TODO check that the model is compiled and do it otherwise
-        self.max_deviation_factor = max_deviation_factor
+        self.max_deviation = max_deviation
         self.n_categories = n_categories
         self.x_train = training_data[0]
         self.y_train = training_data[1]
@@ -34,7 +35,7 @@ class GeneticOptimizer:
 
         for i in range(n_children):
             pure_child = self.inherit_to_child(INVARIANT_MODELS, traits)
-            mutated_child = self.mutate(pure_child, traits)
+            mutated_child = self.mutate(pure_child, traits, max_deviation=self.max_deviation)
 
             children.append(mutated_child)
 
@@ -76,6 +77,13 @@ class GeneticOptimizer:
     @staticmethod
     def mutate(child, traits_to_alter, max_deviation):
         # TODO first
+        mutated_child = child
+
+        # Mutate dropouts
+        if "layer_dropout" in traits_to_alter.keys():
+            for layer in traits_to_alter["layer_dropout"]:
+                # TODO continue
+                mutated_child.layers[layer].rate = child.layers[layer].rate * max_deviation * random()
 
 
         return child

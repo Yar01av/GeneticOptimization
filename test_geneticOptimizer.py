@@ -2,29 +2,10 @@ from unittest import TestCase
 from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
 from tensorflow import keras
-
-
-def get_clean_mnist():
-    # TODO keras assumed!
-    data = keras.datasets.mnist
-
-    (x_train, y_train), (x_test, y_test) = data.load_data()
-    x_train = x_train.reshape(60000, 784)
-    x_test = x_test.reshape(10000, 784)
-    x_train = x_train.astype('float32')
-    x_test = x_test.astype('float32')
-    x_test /= 255
-    x_train /= 255
-
-    one_hot_labels_train = KerasPackageWrapper.make_one_hot(y_train, 10)
-    one_hot_labels_test = KerasPackageWrapper.make_one_hot(y_test, 10)
-
-    return x_train, one_hot_labels_train, x_test, one_hot_labels_test
+from testing_data import get_clean_mnist
 
 
 class TestGeneticOptimizer(TestCase):
-    """Fetches and purifies mnist"""
-
     # Clean mnist data. Ready to use by the networks
     train_data_x, train_data_y, test_data_x, test_data_y = get_clean_mnist()
 
@@ -58,9 +39,9 @@ class TestGeneticOptimizer(TestCase):
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        mutated_model = GeneticOptimizer.mutate(model, {"layer_0_dropout"}, delta)
+        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1}), delta)
 
-        self.assertNotEqual(model.layers[1].rate, mutated_model.layers[1].rate)
+        self.assertEqual(model.layers[1].rate, mutated_model.layers[1].rate)
 
     def test_mutate2(self):
         delta = 0.1
@@ -73,10 +54,10 @@ class TestGeneticOptimizer(TestCase):
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        mutated_model = GeneticOptimizer.mutate(model, {"layer_0_dropout"}, delta)
+        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1}), delta)
 
-        self.assertAlmostEquals(model.layers[1].rate, mutated_model.layers[1].rate,
-                                delta=(delta * mutated_model.layers[1].rate))
+        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate,
+                                delta=delta)
 
     def test_mutate3(self):
         delta = 0.2
@@ -91,9 +72,7 @@ class TestGeneticOptimizer(TestCase):
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        mutated_model = GeneticOptimizer.mutate(model, {"layer_0_dropout, layer_1_dropout"}, delta)
+        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1, 3}), delta)
 
-        self.assertAlmostEquals(model.layers[1].rate, mutated_model.layers[1].rate,
-                          delta=(delta * mutated_model.layers[1].rate))
-        self.assertAlmostEquals(model.layers[3].rate, mutated_model.layers[3].rate,
-                          delta=(delta * mutated_model.layers[3].rate))
+        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate, delta=delta)
+        self.assertAlmostEqual(model.layers[3].rate, mutated_model.layers[3].rate, delta=delta)

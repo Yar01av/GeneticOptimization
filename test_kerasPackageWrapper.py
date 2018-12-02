@@ -1,11 +1,14 @@
 from unittest import TestCase
 from tensorflow import keras
 from main_script import KerasPackageWrapper
+from testing_data import get_clean_mnist
 
 
 class TestKerasPackageWrapper(TestCase):
-    """Test (non-assertive) get_accuracy"""
+    # Clean mnist data. Ready to use by the networks
+    train_data_x, train_data_y, test_data_x, test_data_y = get_clean_mnist()
 
+    """Test (non-assertive) get_accuracy"""
     def test_get_accuracy(self):
         model = KerasPackageWrapper.make_flat_sequential_model()
 
