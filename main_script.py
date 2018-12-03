@@ -23,9 +23,9 @@ class GeneticOptimizer:
         self.traits = traits  # Hyper parameters to optimize
         self.n_iterations = n_iterations
 
-        generated_models = self.breed([base_model], 1, self.traits, self.max_deviation)  # A list of models (parent and the children)
-        self.optimized_models = self.train_models(generated_models)  # A sorted list of models (by performance)
-        # after the lest evolutionary step
+        trained_initial_model = self.train_models(base_model)  # A list of models (parent and the children)
+        self.optimized_models = self.generate_sorted_population(trained_initial_model, self.n_parents, self.traits)
+        # A sorted list of models (by performance) after the lest evolutionary step
 
     """Breeds the parents (already sorted models) and returns a list containing the parents and 
     the mutated children as compiled models."""
@@ -64,12 +64,10 @@ class GeneticOptimizer:
         # TODO third
         # Let the evolution run for n_iterations
         for i in range(self.n_iterations):
-            models = self.breed(self.optimized_models, self.n_parents, self.traits, self.max_deviation)
-            trained_models = self.train_models(models)  # A list of (trained model, accuracy) tuples
-            self.optimized_models = sorted(trained_models, key=lambda t1, t2: t2)
+            self.optimized_models = self.generate_sorted_population(self.optimized_models, self.n_parents, self.traits)
 
     """Returns a list of compiled models with randomized hyper-parameters and the same architecture as the 'model'"""
-    def generate_sorted_population(self, model, optimized_models, n_parents, traits):
+    def generate_sorted_population(self, optimized_models, n_parents, traits):
         # TODO second
         # TODO continue...
         models = GeneticOptimizer.breed(optimized_models, n_parents, traits, self.max_deviation)
@@ -77,7 +75,7 @@ class GeneticOptimizer:
 
         return sorted(trained_models, key=lambda t1, t2: t2)
 
-    """Returns a child with a random set of traits (ones passed to the constractor) 
+    """Returns a child with a random set of traits (ones passed to the constructor) 
     from its parents (list of networks)"""
     @staticmethod
     def inherit_to_child(parents, traits):

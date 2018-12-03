@@ -57,7 +57,7 @@ class TestGeneticOptimizer(TestCase):
         mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1}), delta)
 
         self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate,
-                                delta=delta)
+                               delta=delta)
 
     def test_mutate3(self):
         delta = 0.2
@@ -98,5 +98,7 @@ class TestGeneticOptimizer(TestCase):
         self.assertAlmostEqual(model.layers[5].rate, mutated_model.layers[5].rate, delta=delta)
         self.assertEqual(model.layers[5].rate, mutated_model.layers[5].rate)
 
-
     # TODO test_mutate5 that would not be passed by an identity function
+
+    def test_inherit_to_child(self):
+        self.fail()
