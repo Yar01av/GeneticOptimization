@@ -6,7 +6,7 @@ from copy import deepcopy
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
-    def __init__(self, base_model, training_data, test_data, n_categories , max_deviation=0.2, epochs=3, n_parents=2, traits=None, n_iterations=100):
+    def __init__(self, base_model, training_data, test_data, n_categories, max_deviation=0.2, epochs=3, n_parents=2, traits=None, n_iterations=100):
         # TODO add exception about the traits in relation to the attributes of the model (do the layers
         # given have rates etc.)
         # TODO add exception normalization of the training data
@@ -22,12 +22,15 @@ class GeneticOptimizer:
         self.base_model = base_model
         self.traits = traits  # Hyper parameters to optimize
         self.n_iterations = n_iterations
-        self.optimized_models = self.breed([base_model], 1, self.traits)  # A sorted list of models (by performance)
-                                                          # after the lest evolutionary step
+
+        generated_models = self.breed([base_model], 1, self.traits, self.max_deviation)  # A list of models (parent and the children)
+        self.optimized_models = self.train_models(generated_models)  # A sorted list of models (by performance)
+        # after the lest evolutionary step
 
     """Breeds the parents (already sorted models) and returns a list containing the parents and 
     the mutated children as compiled models."""
-    def breed(self, models, n_parents, traits):
+    @staticmethod
+    def breed(models, n_parents, traits, max_dropout_change_deviation):
         # TODO second
         assert n_parents <= len(models)
 
@@ -36,8 +39,8 @@ class GeneticOptimizer:
         children = []
 
         for i in range(n_children):
-            pure_child = self.inherit_to_child(INVARIANT_MODELS, traits)
-            mutated_child = self.mutate(pure_child, traits, max_deviation=self.max_deviation)
+            pure_child = GeneticOptimizer.inherit_to_child(INVARIANT_MODELS, traits)
+            mutated_child = GeneticOptimizer.mutate(pure_child, traits, max_dropout_change_deviation)
 
             children.append(mutated_child)
 
@@ -50,7 +53,8 @@ class GeneticOptimizer:
         trained_models = models[:]
 
         for model in models:
-            trained_model, accuracy = self.do_training(model, self.x_train, self.y_train, self.x_test, self.y_test)
+            trained_model, accuracy = KerasPackageWrapper.do_training(model, self.x_train, self.y_train, self.x_test,
+                                                                      self.y_test, self.n_categories, self.epochs)
             trained_models.append((trained_model, accuracy))
 
         return trained_models
@@ -60,19 +64,24 @@ class GeneticOptimizer:
         # TODO third
         # Let the evolution run for n_iterations
         for i in range(self.n_iterations):
-            models = self.breed(self.optimized_models, self.n_parents, self.traits)
+            models = self.breed(self.optimized_models, self.n_parents, self.traits, self.max_deviation)
             trained_models = self.train_models(models)  # A list of (trained model, accuracy) tuples
             self.optimized_models = sorted(trained_models, key=lambda t1, t2: t2)
 
     """Returns a list of compiled models with randomized hyper-parameters and the same architecture as the 'model'"""
-    def generate_population(self, model):
-        # TODO first
-        return KerasPackageWrapper.make_flat_sequential_model()
+    def generate_sorted_population(self, model, optimized_models, n_parents, traits):
+        # TODO second
+        # TODO continue...
+        models = GeneticOptimizer.breed(optimized_models, n_parents, traits, self.max_deviation)
+        trained_models = self.train_models(models)  # A list of (trained model, accuracy) tuples
+
+        return sorted(trained_models, key=lambda t1, t2: t2)
 
     """Returns a child with a random set of traits (ones passed to the constractor) 
     from its parents (list of networks)"""
-    def inherit_to_child(self, parents, traits):
-        # TODO second
+    @staticmethod
+    def inherit_to_child(parents, traits):
+        # TODO first
         return KerasPackageWrapper.make_flat_sequential_model()
 
     """Returns the same model (pre-compiled) but with slightly altered hyper-parameters (and compiled). The altered 
@@ -89,8 +98,8 @@ class GeneticOptimizer:
                 mutated_child.save("saved_weights.h5")
 
                 # Compute new rate
-                mutated_child.layers[layer].rate = GeneticOptimizer.get_mutated_dropout(child.layers[layer].rate,
-                                                                                        max_deviation)
+                mutated_child.layers[layer].rate = GeneticOptimizer._get_mutated_dropout(child.layers[layer].rate,
+                                                                                         max_deviation)
 
                 # Propagate the new changes into the backend (cloning is necessary for that)
                 mutated_child = keras.models.clone_model(mutated_child)
@@ -98,26 +107,20 @@ class GeneticOptimizer:
 
         return mutated_child
 
-    """Returns tuple of the compiled 'model' trained on 'training_data' which is assumed normalized 
-    and accuracy on the test data"""
-    def do_training(self, model, x_train, y_train, x_test, y_test):
-        # TODO second
-        one_hot_y_train_labels = KerasPackageWrapper.make_one_hot(y_train, self.n_categories)
-        one_hot_y_test_labels = KerasPackageWrapper.make_one_hot(y_test, self.n_categories)
-
-        # Keras model assumed
-        trained_model = model.fit(x_train, one_hot_y_train_labels, batch_size=200, epochs=self.epochs)
-        accuracy = KerasPackageWrapper.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
-
-        return trained_model, accuracy
-
     """Compute new dropout rate for the given rate"""
     @staticmethod
-    def get_mutated_dropout(old_dropout_rate, deviation):
+    def _get_mutated_dropout(old_dropout_rate, deviation):
+        # TODO first
         change_by = (random() * 2 * deviation) - deviation
         new_rate = old_dropout_rate - change_by
 
+        if new_rate < 0.0:
+            new_rate = 0.0
+        elif new_rate > 1:
+            new_rate = 1.0
+
         return new_rate
+
 
 class KerasPackageWrapper:
     """Wraps around the ML package used - tf.Keras"""
@@ -126,13 +129,30 @@ class KerasPackageWrapper:
     """Returns one hot encoding of the categorical matrix data in 2d numpy array"""
     @staticmethod
     def make_one_hot(categorical_data, n_categories):
+        # TODO first
         incoding = keras.utils.to_categorical(categorical_data, num_classes=n_categories)
 
         return incoding
 
+    """Returns tuple of the compiled 'model' trained on 'training_data' which is assumed normalized 
+        and accuracy on the test data"""
+    @staticmethod
+    def do_training(model, x_train, y_train, x_test, y_test, n_categories, epochs):
+        # TODO second
+        one_hot_y_train_labels = KerasPackageWrapper.make_one_hot(y_train, n_categories)
+        one_hot_y_test_labels = KerasPackageWrapper.make_one_hot(y_test, n_categories)
+
+        # Keras model assumed
+        trained_model = model.fit(x_train, one_hot_y_train_labels, epochs=epochs, batch_size=200)
+        accuracy = KerasPackageWrapper.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
+
+        return trained_model, accuracy
+
     """Returns a sequential model with random architecture"""
     @staticmethod
     def make_flat_sequential_model():
+        # TODO first
+
         return keras.Sequential()
 
     """Returns accuracy for the given compiled model on the test data (given as one-hot encoding)"""
