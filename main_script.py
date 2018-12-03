@@ -1,4 +1,7 @@
 # First objective: otimize the drop-outs only
+#
+# Dropouts should be passed as the dictionary of traits. For example, traits = dict(layer_dropout={1, 3})
+# says that the first and third layers (which should be dropout layers) should be optimized
 import keras
 from random import random
 from copy import deepcopy

@@ -100,5 +100,61 @@ class TestGeneticOptimizer(TestCase):
 
     # TODO test_mutate5 that would not be passed by an identity function
 
-    def test_inherit_to_child(self):
-        self.fail()
+    def test_inherit_to_child1(self):
+        # TODO keras assumed!
+        model = KerasPackageWrapper.make_flat_sequential_model()
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.5))
+
+        model.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}))
+        self.assertEqual(model.layers[1].rate, child.layers[1].rate)
+        self.assertEqual(model.layers[0].units, child.layers[0].units)
+
+    def test_inherit_to_child2(self):
+        # TODO keras assumed!
+        model = KerasPackageWrapper.make_flat_sequential_model()
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.2))
+
+        model.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}))
+        self.assertEqual(model.layers[0].units, child.layers[0].units)
+        self.assertEqual(model.layers[1].rate, child.layers[1].rate)
+        self.assertEqual(model.layers[2].units, child.layers[2].units)
+        self.assertEqual(model.layers[3].rate, child.layers[3].rate)
+
+    def test_inherit_to_child3(self):
+        # TODO keras assumed!
+        # TODO continue
+        model1 = KerasPackageWrapper.make_flat_sequential_model()
+        model1.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model1.add(keras.layers.Dropout(0.5))
+
+        model1.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        model2 = KerasPackageWrapper.make_flat_sequential_model()
+        model2.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model2.add(keras.layers.Dropout(0.5))
+
+        model2.compile(optimizer='rmsprop',
+                       loss='categorical_crossentropy',
+                       metrics=['accuracy'])
+
+        child = GeneticOptimizer.inherit_to_child([model1, model2], dict(layer_dropout={1}))
+        # Assert that the structure stays the same as that of parents but the rate changes
+        self.assertEqual(child.layers[0].units, model1.layers[0].units)
+        self.assertEqual(child.layers[0].units, model2.layers[0].units)
+        self.assertIn(child.layers[1].rate, [model1.layers[1].rate, model2.layers[1].rate])
+
+    # TODO make test_inherit_to_child4 that would not be passed by multiplexer
