@@ -3,17 +3,18 @@
 # Dropouts should be passed as the dictionary of traits. For example, traits = dict(layer_dropout={1, 3})
 # says that the first and third layers (which should be dropout layers) should be optimized
 import keras
-from random import random
-from copy import deepcopy
+import random
 
 
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
-    def __init__(self, base_model, training_data, test_data, n_categories, max_deviation=0.2, epochs=3, n_parents=2, traits=None, n_iterations=100):
+    def __init__(self, base_model, training_data, test_data, n_categories, max_deviation=0.2, epochs=3, n_parents=2,
+                 traits=None, n_iterations=100):
         # TODO add exception about the traits in relation to the attributes of the model (do the layers
         # given have rates etc.)
         # TODO add exception normalization of the training data
         # TODO check that the model is compiled and do it otherwise
+        # TODO n_parents >= 1
         self.max_deviation = max_deviation
         self.n_categories = n_categories
         self.x_train = training_data[0]
@@ -42,8 +43,7 @@ class GeneticOptimizer:
         children = []
 
         for i in range(n_children):
-            pure_child = GeneticOptimizer.inherit_to_child(INVARIANT_MODELS, traits)
-            mutated_child = GeneticOptimizer.mutate(pure_child, traits, max_dropout_change_deviation)
+            mutated_child = GeneticOptimizer.inherit_to_child(INVARIANT_MODELS, traits, max_dropout_change_deviation)
 
             children.append(mutated_child)
 
@@ -72,39 +72,36 @@ class GeneticOptimizer:
     """Returns a list of compiled models with randomized hyper-parameters and the same architecture as the 'model'"""
     def generate_sorted_population(self, optimized_models, n_parents, traits):
         # TODO second
-        # TODO continue...
         models = GeneticOptimizer.breed(optimized_models, n_parents, traits, self.max_deviation)
         trained_models = self.train_models(models)  # A list of (trained model, accuracy) tuples
 
         return sorted(trained_models, key=lambda t1, t2: t2)
 
-    """Returns a child with a random set of traits (ones passed to the constructor) 
-    from its parents (list of networks)"""
+    """Returns a model (pre-compiled) with the same archtecture and weights as its parents but with slightly 
+    altered hyper-parameters (and compiled). For dropout, the altered values should equal the old ones +/- 
+    max_deviation"""
     @staticmethod
-    def inherit_to_child(parents, traits):
-        # TODO first
-        return KerasPackageWrapper.make_flat_sequential_model()
-
-    """Returns the same model (pre-compiled) but with slightly altered hyper-parameters (and compiled). The altered 
-    values should equal the old ones +/- max_deviation"""
-    @staticmethod
-    def mutate(child, traits_to_alter, max_deviation):
+    def inherit_to_child(parents, traits_to_alter, max_deviation):
         # TODO second
-        mutated_child = KerasPackageWrapper.deep_copy(child)
+        # TODO continue
+        mutated_child = KerasPackageWrapper.deep_copy(parents[0])
+        weights_temp_save_dir = "saved_weights.h5"
 
         # Mutate dropouts
         if "layer_dropout" in traits_to_alter.keys():
-            for layer in traits_to_alter["layer_dropout"]:
+            for layer_i in traits_to_alter["layer_dropout"]:
                 # TODO keras assumed
-                mutated_child.save("saved_weights.h5")
+                mutated_child.save(weights_temp_save_dir)
+
+                parent_to_inherit_from = random.choice(range(len(parents)))
+                dropout_of_parent = parents[parent_to_inherit_from].layers[layer_i].rate
 
                 # Compute new rate
-                mutated_child.layers[layer].rate = GeneticOptimizer._get_mutated_dropout(child.layers[layer].rate,
-                                                                                         max_deviation)
+                mutated_child.layers[layer_i].rate = GeneticOptimizer._get_mutated_dropout(dropout_of_parent,
+                                                                                           max_deviation)
 
                 # Propagate the new changes into the backend (cloning is necessary for that)
-                mutated_child = keras.models.clone_model(mutated_child)
-                mutated_child.load_weights("saved_weights.h5")
+                mutated_child = KerasPackageWrapper.re_init_model(mutated_child, weights_temp_save_dir)
 
         return mutated_child
 
@@ -112,7 +109,7 @@ class GeneticOptimizer:
     @staticmethod
     def _get_mutated_dropout(old_dropout_rate, deviation):
         # TODO first
-        change_by = (random() * 2 * deviation) - deviation
+        change_by = (random.random() * 2 * deviation) - deviation
         new_rate = old_dropout_rate - change_by
 
         if new_rate < 0.0:
@@ -170,10 +167,19 @@ class KerasPackageWrapper:
 
     """Copies the model"""
     @staticmethod
-    def deep_copy(model):
-        model.save("tempModelSave.h5")
-        copied_model = keras.models.load_model("tempModelSave.h5", compile=True)
+    def deep_copy(model, filename="tempModelSave.h5"):
+        model.save(filename)
+        copied_model = keras.models.load_model(filename, compile=True)
 
         return copied_model
+
+    """Copies the model"""
+
+    @staticmethod
+    def re_init_model(model, filename="tempModelSave.h5"):
+        model = keras.models.clone_model(model)
+        model.load_weights(filename)
+
+        return model
 
     """Testing related"""

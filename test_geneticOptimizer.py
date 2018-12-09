@@ -3,6 +3,7 @@ from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
 import keras
 from testing_data import get_clean_mnist
+from operator import xor
 
 
 class TestGeneticOptimizer(TestCase):
@@ -28,80 +29,10 @@ class TestGeneticOptimizer(TestCase):
     def test_one_hot3(self):
         self._check_one_hot(np.array([[1], [0]]), 2, np.array([[0, 1], [1, 0]]))
 
-    def test_mutate1(self):
-        delta = 0.0
-
-        # TODO keras assumed!
-        model = KerasPackageWrapper.make_flat_sequential_model()
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.5))
-        model.compile(optimizer='rmsprop',
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
-
-        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1}), delta)
-
-        self.assertEqual(model.layers[1].rate, mutated_model.layers[1].rate)
-
-    def test_mutate2(self):
-        delta = 0.1
-
-        # TODO keras assumed!
-        model = KerasPackageWrapper.make_flat_sequential_model()
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.5))
-        model.compile(optimizer='rmsprop',
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
-
-        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1}), delta)
-
-        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate,
-                               delta=delta)
-
-    def test_mutate3(self):
-        delta = 0.2
-
-        # TODO keras assumed!
-        model = KerasPackageWrapper.make_flat_sequential_model()
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.5))
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.2))
-        model.compile(optimizer='rmsprop',
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
-
-        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1, 3}), delta)
-
-        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate, delta=delta)
-        self.assertAlmostEqual(model.layers[3].rate, mutated_model.layers[3].rate, delta=delta)
-
-    def test_mutate4(self):
-        delta = 0.2
-
-        # TODO keras assumed!
-        model = KerasPackageWrapper.make_flat_sequential_model()
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.5))
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.3))
-        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model.add(keras.layers.Dropout(0.2))
-        model.compile(optimizer='rmsprop',
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
-
-        mutated_model = GeneticOptimizer.mutate(model, dict(layer_dropout={1, 5}), delta)
-
-        self.assertAlmostEqual(model.layers[1].rate, mutated_model.layers[1].rate, delta=delta)
-        self.assertAlmostEqual(model.layers[5].rate, mutated_model.layers[5].rate, delta=delta)
-        self.assertEqual(model.layers[5].rate, mutated_model.layers[5].rate)
-
-    # TODO test_mutate5 that would not be passed by an identity function
-
     def test_inherit_to_child1(self):
         # TODO keras assumed!
+        delta = 0.0
+
         model = KerasPackageWrapper.make_flat_sequential_model()
         model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model.add(keras.layers.Dropout(0.5))
@@ -110,12 +41,30 @@ class TestGeneticOptimizer(TestCase):
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}))
+        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}), delta)
         self.assertEqual(model.layers[1].rate, child.layers[1].rate)
         self.assertEqual(model.layers[0].units, child.layers[0].units)
 
     def test_inherit_to_child2(self):
         # TODO keras assumed!
+        delta = 0.2
+
+        model = KerasPackageWrapper.make_flat_sequential_model()
+        model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
+        model.add(keras.layers.Dropout(0.5))
+
+        model.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}), delta)
+        self.assertAlmostEquals(model.layers[1].rate, child.layers[1].rate, delta)
+        self.assertEqual(model.layers[0].units, child.layers[0].units)
+
+    def test_inherit_to_child3(self):
+        # TODO keras assumed!
+        delta = 0.2
+
         model = KerasPackageWrapper.make_flat_sequential_model()
         model.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model.add(keras.layers.Dropout(0.5))
@@ -126,15 +75,16 @@ class TestGeneticOptimizer(TestCase):
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}))
+        child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}), delta)
         self.assertEqual(model.layers[0].units, child.layers[0].units)
-        self.assertEqual(model.layers[1].rate, child.layers[1].rate)
+        self.assertAlmostEqual(model.layers[1].rate, child.layers[1].rate, delta = 0.2)
         self.assertEqual(model.layers[2].units, child.layers[2].units)
-        self.assertEqual(model.layers[3].rate, child.layers[3].rate)
+        self.assertAlmostEqual(model.layers[3].rate, child.layers[3].rate, delta = 0.2)
 
-    def test_inherit_to_child3(self):
+    def test_inherit_to_child4(self):
         # TODO keras assumed!
-        # TODO continue
+        delta = 0.2
+
         model1 = KerasPackageWrapper.make_flat_sequential_model()
         model1.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model1.add(keras.layers.Dropout(0.5))
@@ -151,10 +101,16 @@ class TestGeneticOptimizer(TestCase):
                        loss='categorical_crossentropy',
                        metrics=['accuracy'])
 
-        child = GeneticOptimizer.inherit_to_child([model1, model2], dict(layer_dropout={1}))
+        child = GeneticOptimizer.inherit_to_child([model1, model2], dict(layer_dropout={1}), delta)
         # Assert that the structure stays the same as that of parents but the rate changes
         self.assertEqual(child.layers[0].units, model1.layers[0].units)
         self.assertEqual(child.layers[0].units, model2.layers[0].units)
-        self.assertIn(child.layers[1].rate, [model1.layers[1].rate, model2.layers[1].rate])
+
+        if abs(child.layers[1].rate - model1.layers[1].rate) >= delta:
+            self.fail("The rate " + str(child.layers[1].rate) + " is greater than delta relative to the first model")
+        elif abs(child.layers[1].rate - model2.layers[1].rate) >= delta:
+            self.fail("The rate " + str(child.layers[1].rate) + " is greater than delta relative to the second model")
+        elif not xor(model1.layers[1].rate - child.layers[1].rate == 0, model2.layers[1].rate - child.layers[1].rate == 0) :
+            self.fail("The rate should be inherited form only one of the models")
 
     # TODO make test_inherit_to_child4 that would not be passed by multiplexer
