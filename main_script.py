@@ -141,7 +141,7 @@ class KerasPackageWrapper:
         one_hot_y_test_labels = KerasPackageWrapper.make_one_hot(y_test, n_categories)
 
         # Keras model assumed
-        trained_model = model.fit(x_train, one_hot_y_train_labels, epochs=epochs, batch_size=200)
+        trained_model = model.fit(x_train, one_hot_y_train_labels, epochs=epochs, batch_size=200).model
         accuracy = KerasPackageWrapper.get_accuracy(trained_model, x_test, one_hot_y_test_labels)
 
         return trained_model, accuracy

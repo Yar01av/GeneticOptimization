@@ -3,7 +3,6 @@ from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
 import keras
 from testing_data import get_clean_mnist
-from operator import xor
 
 
 class TestGeneticOptimizer(TestCase):
