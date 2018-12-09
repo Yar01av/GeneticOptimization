@@ -2,7 +2,7 @@ from unittest import TestCase
 from main_script import GeneticOptimizer, KerasPackageWrapper
 import numpy as np
 import keras
-from testing_data import get_clean_mnist
+from testing_data import get_clean_mnist, get_clean_mnist_with_cold_labels
 
 
 class TestGeneticOptimizer(TestCase):
@@ -112,3 +112,59 @@ class TestGeneticOptimizer(TestCase):
             self.fail()
 
     # TODO make test_inherit_to_child4 that would not be passed by multiplexer
+
+    """Test train_models (non-assertive)"""
+    def test_train_models1(self):
+        # TODO keras assumed!
+        model1 = KerasPackageWrapper.make_flat_sequential_model()
+        model1.add(keras.layers.Dense(300, activation="relu", input_dim=784))
+        model1.add(keras.layers.Dropout(0.2))
+        model1.add(keras.layers.Dense(10, activation="softmax"))
+        model1.add(keras.layers.Dropout(0.2))
+
+        model1.compile(optimizer='rmsprop',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        instance = GeneticOptimizer(model1, (get_clean_mnist_with_cold_labels()[:2]),
+                                    (get_clean_mnist_with_cold_labels()[2:]), n_categories=10,
+                                    traits=dict(layer_dropout={1, 3}))
+
+        print(GeneticOptimizer.train_models(instance, [model1]))
+
+    def test_train_models2(self):
+        model1 = KerasPackageWrapper.make_flat_sequential_model()
+        model1.add(keras.layers.Dense(300, activation="relu", input_dim=784))
+        model1.add(keras.layers.Dropout(0.2))
+        model1.add(keras.layers.Dense(10, activation="softmax"))
+        model1.add(keras.layers.Dropout(0.2))
+
+        model2 = KerasPackageWrapper.make_flat_sequential_model()
+        model2.add(keras.layers.Dense(300, activation="relu", input_dim=784))
+        model2.add(keras.layers.Dropout(0.5))
+        model2.add(keras.layers.Dense(10, activation="softmax"))
+        model2.add(keras.layers.Dropout(0.5))
+
+        model3 = KerasPackageWrapper.make_flat_sequential_model()
+        model3.add(keras.layers.Dense(300, activation="relu", input_dim=784))
+        model3.add(keras.layers.Dropout(0.7))
+        model3.add(keras.layers.Dense(10, activation="softmax"))
+        model3.add(keras.layers.Dropout(0.7))
+
+        model1.compile(optimizer='rmsprop',
+                       loss='categorical_crossentropy',
+                       metrics=['accuracy'])
+
+        model2.compile(optimizer='rmsprop',
+                       loss='categorical_crossentropy',
+                       metrics=['accuracy'])
+
+        model3.compile(optimizer='rmsprop',
+                       loss='categorical_crossentropy',
+                       metrics=['accuracy'])
+
+        instance = GeneticOptimizer(model1, (get_clean_mnist_with_cold_labels()[:2]),
+                                    (get_clean_mnist_with_cold_labels()[2:]), n_categories=10,
+                                    traits=dict(layer_dropout={1, 3}))
+
+        print(GeneticOptimizer.train_models(instance, [model1, model2,  model3]))

@@ -9,7 +9,7 @@ import random
 class GeneticOptimizer:
     """The main class for the genetic optimizer"""
     def __init__(self, base_model, training_data, test_data, n_categories, max_deviation=0.2, epochs=3, n_parents=2,
-                 traits=None, n_iterations=100):
+                 traits=None, n_iterations=5):
         # TODO add exception about the traits in relation to the attributes of the model (do the layers
         # given have rates etc.)
         # TODO add exception normalization of the training data
@@ -26,10 +26,7 @@ class GeneticOptimizer:
         self.base_model = base_model
         self.traits = traits  # Hyper parameters to optimize
         self.n_iterations = n_iterations
-
-        trained_initial_model = self.train_models(base_model)  # A list of models (parent and the children)
-        self.optimized_models = self.generate_sorted_population(trained_initial_model, self.n_parents, self.traits)
-        # A sorted list of models (by performance) after the lest evolutionary step
+        self.optimized_models = []  # Serves as the output of the optimizer
 
     """Breeds the parents (already sorted models) and returns a list containing the parents and 
     the mutated children as compiled models."""
@@ -52,9 +49,9 @@ class GeneticOptimizer:
     """Returns a list of models where for every compiled model from the 'models' there is a tuple of the trained model
     and the accuracy on test data"""
     def train_models(self, models):
-        # TODO second
-        trained_models = models[:]
+        trained_models = []
 
+        # TODO second
         for model in models:
             trained_model, accuracy = KerasPackageWrapper.do_training(model, self.x_train, self.y_train, self.x_test,
                                                                       self.y_test, self.n_categories, self.epochs)
@@ -65,6 +62,10 @@ class GeneticOptimizer:
     """Modifies a list of models. Architecture remains the same as 'base_model' but hyper-parameters are optimal"""
     def optimize(self):
         # TODO third
+        trained_initial_model = self.train_models([self.base_model])  # A list of models (parent and the children)
+        self.optimized_models = self.generate_sorted_population(trained_initial_model, self.n_parents, self.traits)
+        # A sorted list of models (by performance) after the last evolutionary step
+
         # Let the evolution run for n_iterations
         for i in range(self.n_iterations):
             self.optimized_models = self.generate_sorted_population(self.optimized_models, self.n_parents, self.traits)
@@ -83,7 +84,6 @@ class GeneticOptimizer:
     @staticmethod
     def inherit_to_child(parents, traits_to_alter, max_deviation):
         # TODO second
-        # TODO continue
         mutated_child = KerasPackageWrapper.deep_copy(parents[0])
         weights_temp_save_dir = "saved_weights.h5"
 
