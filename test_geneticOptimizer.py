@@ -58,7 +58,9 @@ class TestGeneticOptimizer(TestCase):
                       metrics=['accuracy'])
 
         child = GeneticOptimizer.inherit_to_child([model], dict(layer_dropout={1}), delta)
-        self.assertAlmostEquals(model.layers[1].rate, child.layers[1].rate, delta)
+
+        if abs(model.layers[1].rate - child.layers[1].rate) >= delta:
+            self.fail()
         self.assertEqual(model.layers[0].units, child.layers[0].units)
 
     def test_inherit_to_child3(self):
@@ -83,11 +85,11 @@ class TestGeneticOptimizer(TestCase):
 
     def test_inherit_to_child4(self):
         # TODO keras assumed!
-        delta = 0.2
+        delta = 0.1
 
         model1 = KerasPackageWrapper.make_flat_sequential_model()
         model1.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model1.add(keras.layers.Dropout(0.5))
+        model1.add(keras.layers.Dropout(0.2))
 
         model1.compile(optimizer='rmsprop',
                       loss='categorical_crossentropy',
@@ -95,7 +97,7 @@ class TestGeneticOptimizer(TestCase):
 
         model2 = KerasPackageWrapper.make_flat_sequential_model()
         model2.add(keras.layers.Dense(10, activation="relu", input_dim=10))
-        model2.add(keras.layers.Dropout(0.5))
+        model2.add(keras.layers.Dropout(0.7))
 
         model2.compile(optimizer='rmsprop',
                        loss='categorical_crossentropy',
@@ -106,11 +108,8 @@ class TestGeneticOptimizer(TestCase):
         self.assertEqual(child.layers[0].units, model1.layers[0].units)
         self.assertEqual(child.layers[0].units, model2.layers[0].units)
 
-        if abs(child.layers[1].rate - model1.layers[1].rate) >= delta:
-            self.fail("The rate " + str(child.layers[1].rate) + " is greater than delta relative to the first model")
-        elif abs(child.layers[1].rate - model2.layers[1].rate) >= delta:
-            self.fail("The rate " + str(child.layers[1].rate) + " is greater than delta relative to the second model")
-        elif not xor(model1.layers[1].rate - child.layers[1].rate == 0, model2.layers[1].rate - child.layers[1].rate == 0) :
-            self.fail("The rate should be inherited form only one of the models")
+        if abs(child.layers[1].rate - model1.layers[1].rate) >= delta and \
+                abs(child.layers[1].rate - model2.layers[1].rate >= delta):
+            self.fail()
 
     # TODO make test_inherit_to_child4 that would not be passed by multiplexer
