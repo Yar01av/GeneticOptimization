@@ -28,7 +28,7 @@ class GeneticOptimizer:
         self.n_iterations = n_iterations
         self.optimized_models = []  # Serves as the output of the optimizer
 
-    """Breeds the parents (already sorted models) and returns a list containing the parents and 
+    """Breeds the parents (at least one already sorted model) and returns a list containing the parents and 
     the mutated children as compiled models."""
     @staticmethod
     def breed(models, n_parents, traits, max_dropout_change_deviation):
