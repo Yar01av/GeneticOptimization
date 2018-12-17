@@ -40,11 +40,12 @@ class GeneticOptimizer:
         children = []
 
         for i in range(n_children):
-            mutated_child = GeneticOptimizer.inherit_to_child(INVARIANT_MODELS, traits, max_dropout_change_deviation)
+            mutated_child = GeneticOptimizer.inherit_to_child(GeneticOptimizer._extract_from_tuples(INVARIANT_MODELS, 0),
+                                                              traits, max_dropout_change_deviation)
 
             children.append(mutated_child)
 
-        return INVARIANT_MODELS.concat(children)
+        return INVARIANT_MODELS + children
 
     """Returns a list of models where for every compiled model from the 'models' there is a tuple of the trained model
     and the accuracy on test data"""
@@ -118,6 +119,12 @@ class GeneticOptimizer:
             new_rate = 1.0
 
         return new_rate
+
+    """Takes specified element form each tuple in a list of tuples. It is assumed 
+        that all tuples are of the smae size that is greater than element_i"""
+    @staticmethod
+    def _extract_from_tuples(tuples, element_i):
+        return [tup[element_i] for tup in tuples]
 
 
 class KerasPackageWrapper:

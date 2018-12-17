@@ -201,12 +201,15 @@ class TestGeneticOptimizer(TestCase):
         model_c2.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model_c2.add(keras.layers.Dropout(0.7))
 
-        new_generation = GeneticOptimizer.breed([(model_p, 0.3), (model_c1, 0.2), (model_c2, 0.1)], n_parents,
+        new_generation = GeneticOptimizer.breed([model_p, model_c1, model_c2], n_parents,
                                                 traits, delta)
 
         for layer_i in traits["layer_dropout"]:
-            self.assertEquals(model_p.layers[layer_i - 1].units, new_generation[0].layers[layer_i - 1].units)
-            self.assertEqual(model_p.layers[layer_i].rate, new_generation[layer_i].layers[1].rate)
+            self.assertEqual(model_p.layers[layer_i - 1].units, new_generation[1].layers[layer_i - 1].units)
+            self.assertEqual(model_p.layers[layer_i].rate, new_generation[1][layer_i].layers[1].rate)
+
+            self.assertEqual(model_p.layers[layer_i - 1].units, new_generation[2].layers[layer_i - 1].units)
+            self.assertEqual(model_p.layers[layer_i].rate, new_generation[2][layer_i].layers[1].rate)
 
     def test_breed2(self):
         delta = 0.3
@@ -225,7 +228,7 @@ class TestGeneticOptimizer(TestCase):
         model_c2.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model_c2.add(keras.layers.Dropout(0.7))
 
-        new_generation = GeneticOptimizer.breed([(model_p, 0.3), (model_c1, 0.2), (model_c2, 0.1)], n_parents,
+        new_generation = GeneticOptimizer.breed([model_p, model_c1, model_c2], n_parents,
                                                 traits, delta)
 
         for layer_i in traits["layer_dropout"]:
