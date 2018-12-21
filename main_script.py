@@ -33,7 +33,6 @@ class GeneticOptimizer:
     @staticmethod
     def breed(models, n_parents, traits, max_dropout_change_deviation):
         # TODO second
-        # TODO continue
         assert n_parents <= len(models)
 
         INVARIANT_MODELS = models[:n_parents]  # parents - will remain unchanged
@@ -41,9 +40,10 @@ class GeneticOptimizer:
         children = []
 
         for i in range(n_children):
-            child = GeneticOptimizer.inherit_to_child(INVARIANT_MODELS, traits, max_dropout_change_deviation)
+            mutated_child = GeneticOptimizer.inherit_to_child(GeneticOptimizer._extract_from_tuples(INVARIANT_MODELS, 0),
+                                                              traits, max_dropout_change_deviation)
 
-            children.append(child)
+            children.append(mutated_child)
 
         return INVARIANT_MODELS + children
 
@@ -121,7 +121,7 @@ class GeneticOptimizer:
         return new_rate
 
     """Takes specified element form each tuple in a list of tuples. It is assumed 
-        that all tuples are of the small size that is greater than element_i"""
+        that all tuples are of the smae size that is greater than element_i"""
     @staticmethod
     def _extract_from_tuples(tuples, element_i):
         return [tup[element_i] for tup in tuples]

@@ -211,8 +211,6 @@ class TestGeneticOptimizer(TestCase):
             self.assertEqual(model_p.layers[layer_i - 1].units, new_generation[2].layers[layer_i - 1].units)
             self.assertEqual(model_p.layers[layer_i].rate, new_generation[2][layer_i].layers[1].rate)
 
-        # TODO continue (run this function., fix the problem that appears)
-
     def test_breed2(self):
         delta = 0.3
         n_parents = 1
