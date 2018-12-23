@@ -28,10 +28,28 @@ class GeneticOptimizer:
         self.n_iterations = n_iterations
         self.optimized_models = []  # Serves as the output of the optimizer
 
-    """Breeds the parents (at least one already sorted model) and returns a list containing the parents and 
-    the mutated children as compiled models."""
     @staticmethod
     def breed(models, n_parents, traits, max_dropout_change_deviation):
+        """
+        Breeds the parents (at least one already sorted model) and returns a list containing the parents and
+        the mutated children as compiled models.
+
+        Parameters
+        ----------
+        models : [keras model]
+            Models that represent the previous generation (sorted by accuracy on the test data)
+        n_parents : int
+            len(models) >= n_parents > 0. Number of models whose traits would be passed on to the children
+        traits : dict
+            See file header!
+        max_dropout_change_deviation : float
+            0 <= max_dropout_change_deviation <= 1. How much is dropout (trait) is allowed to vary in single mutation
+
+        Returns
+        -------
+        A list models with len(models) - n_parents being generated based on the parents.
+
+        """
         # TODO second
         # TODO continue
         assert n_parents <= len(models)

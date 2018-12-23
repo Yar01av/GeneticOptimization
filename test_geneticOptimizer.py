@@ -9,13 +9,21 @@ class TestGeneticOptimizer(TestCase):
     # Clean mnist data. Ready to use by the networks
     train_data_x, train_data_y, test_data_x, test_data_y = get_clean_mnist()
 
-    # Like assertAlmost but for multiple numbers
     def _assertAlmostEqualsMultiple(self, tested_value, values_to_compare, delta):
+        """Like assertAlmostEquals but for multiple numbers.
+            Fails if the tested_value is not close enough to any value in values_to_compare"""
         # Check if there are any values that are close enough
         filter(lambda x: abs(x - tested_value) <= delta, values_to_compare)
 
         if len(values_to_compare) == 0:
             self.fail("Some values_to_compare are too far away from the tested_value")
+
+    def _assertApproxEqual(self, val1, val2, delta):
+        """Same as self.assertAlmostEqual but works always (no  'float' object cannot be interpreted as an
+        integer errors"""
+
+        if abs(val1 - val2) > delta:
+            self.fail()
 
     # Extracts rates of the list of models and returns them as a list
     @staticmethod
@@ -204,12 +212,13 @@ class TestGeneticOptimizer(TestCase):
         new_generation = GeneticOptimizer.breed([model_p, model_c1, model_c2], n_parents,
                                                 traits, delta)
 
+        # Check the networks layer-wise
         for layer_i in traits["layer_dropout"]:
             self.assertEqual(model_p.layers[layer_i - 1].units, new_generation[1].layers[layer_i - 1].units)
-            self.assertEqual(model_p.layers[layer_i].rate, new_generation[1][layer_i].layers[1].rate)
+            self.assertEqual(model_p.layers[layer_i].rate, new_generation[1].layers[layer_i].rate)
 
             self.assertEqual(model_p.layers[layer_i - 1].units, new_generation[2].layers[layer_i - 1].units)
-            self.assertEqual(model_p.layers[layer_i].rate, new_generation[2][layer_i].layers[1].rate)
+            self.assertEqual(model_p.layers[layer_i].rate, new_generation[2].layers[layer_i].rate)
 
         # TODO continue (run this function., fix the problem that appears)
 
@@ -233,10 +242,11 @@ class TestGeneticOptimizer(TestCase):
         new_generation = GeneticOptimizer.breed([model_p, model_c1, model_c2], n_parents,
                                                 traits, delta)
 
+        # Check the networks layer-wise
         for layer_i in traits["layer_dropout"]:
             for network in new_generation[n_parents:]:
-                self.assertEquals(model_p.layers[layer_i - 1].units, network.layers[layer_i - 1].units)
-                self.assertAlmostEqual(model_p.layers[layer_i].rate, network.layers[1].rate, delta)
+                self.assertEqual(model_p.layers[layer_i - 1].units, network.layers[layer_i - 1].units)
+                self._assertApproxEqual(model_p.layers[layer_i].rate, network.layers[1].rate, delta)
 
     def test_breed3(self):
         delta = 0.3
@@ -259,13 +269,11 @@ class TestGeneticOptimizer(TestCase):
         model_c3.add(keras.layers.Dense(10, activation="relu", input_dim=10))
         model_c3.add(keras.layers.Dropout(0.9))
 
-        new_generation = GeneticOptimizer.breed([(model_p, 0.5), (model_c1, 0.3), (model_c2, 0.2), (model_c3, 0.1)],
+        new_generation = GeneticOptimizer.breed([model_p, model_c1, model_c2, model_c3],
                                                 n_parents, traits, delta)
 
+        # Check the networks layer-wise
         for layer_i in traits["layer_dropout"]:
             for network in new_generation[n_parents:]:
                 self.assertEquals(model_p.layers[layer_i - 1].units, network.layers[layer_i - 1].units)
-
-                self._assertAlmostEqualsMultiple(network.layers[layer_i].rate,
-                                                 TestGeneticOptimizer._extract_rates(new_generation[:n_parents], layer_i),
-                                                 delta)
+                self._assertAlmostEqualsMultiple(network.layers[layer_i].rate, new_generation[:n_parents], delta)
